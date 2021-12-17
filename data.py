@@ -12,6 +12,10 @@ def load_datasets(train_path, valid_path):
     train_dataset = MixAudioDataset(train_path)
     valid_dataset = MixAudioDataset(valid_path)
     return train_dataset, valid_dataset
+
+def load_test_dataset(test_path):
+    test_dataset = MixAudioDataset(test_path)
+    return test_dataset
     
 class MixAudioDataset(torch.utils.data.Dataset):
     def __init__(
@@ -28,9 +32,9 @@ class MixAudioDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         x, _ = torchaudio.load(self.file_dir + '/' + self.file_names[index])
-        y = torch.zeros(50, dtype=torch.int32)
+        y = torch.zeros(50, dtype=torch.float32)
         for i in self.get_audio_indices(self.file_names[index]):
-            y[i] = 1
+            y[i] = float(1)
         
         return x, y
 
