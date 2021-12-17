@@ -64,11 +64,12 @@ def main():
         default=False,
         help="use cuda",
     )
-
+    parser.add_argument("--nb_workers", type=int, default=0)
+    parser.add_argument("--audio_backend", type=str, default="sox_io")
 
 
     args, _ = parser.parse_known_args()
-
+    torchaudio.set_audio_backend(args.audio_backend)
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     print("Using GPU:", use_cuda)
     dataloader_kwargs = {"num_workers": args.nb_workers, "pin_memory": True} if use_cuda else {}
@@ -142,10 +143,11 @@ def main():
         ##Train##
         for x, y in pbar:
             pbar.set_description("Training batch")
+
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             y_out = model(x)
-            
+            print(y_out.shape, y.shape) 
             loss = criterion(y_out, y)
             
             loss.backward()

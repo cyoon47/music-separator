@@ -27,7 +27,7 @@ class MixAudioDataset(torch.utils.data.Dataset):
         self.sample_rate = sample_rate
 
     def __getitem__(self, index):
-        x = torchaudio.load(self.file_dir + '/' + self.file_names[index])
+        x, _ = torchaudio.load(self.file_dir + '/' + self.file_names[index])
         y = torch.zeros(50, dtype=torch.int32)
         for i in self.get_audio_indices(self.file_names[index]):
             y[i] = 1
@@ -37,7 +37,7 @@ class MixAudioDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.file_names)
 
-    def get_audio_indices(file_name):
+    def get_audio_indices(self, file_name):
         indices = map(lambda x: int(x)-1, file_name.split('.')[0].split('_'))
         return indices
 

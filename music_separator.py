@@ -16,6 +16,7 @@ class MusicSeparator(nn.Module):
         wiener_win_len=300,
         device=None
     ):
+        super(MusicSeparator, self).__init__()
         self.separator = utils.load_separator(
             model_str_or_path=model_str_or_path,
             targets=targets,
@@ -28,7 +29,7 @@ class MusicSeparator(nn.Module):
         self.separator.freeze()
         
         # TODO: figure out what is the input tensor size
-        in_features = None
+        in_features = 1323648 # PRAY HARD
         self.classifier = nn.Linear(in_features, 50)
 
     
