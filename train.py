@@ -13,8 +13,8 @@ import copy
 import torchaudio
 
 import data
-import music_separator
-# from openunmix import utils
+from music_separator import MusicSeparator
+from openunmix import utils
 # from openunmix import transforms
 
 tqdm.monitor_interval = 0
@@ -26,6 +26,7 @@ def main():
 
     parser.add_argument("--train_path", type=str, help="path of train dataset")
     parser.add_argument("--valid_path", type=str, help="path of valid dataset")
+    parser.add_argument("--model_path", type=str, default="", help="Name or path of pretrained model to fine-tune")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001, help="learning rate, defaults to 1e-3")
@@ -51,6 +52,12 @@ def main():
     parser.add_argument(
         "--seed", type=int, default=42, metavar="S", help="random seed (default: 42)"
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        default=False,
+        help="less verbose during training",
+    )
 
 
     args, _ = parser.parse_known_args()
@@ -72,17 +79,8 @@ def main():
     )
     valid_sampler = torch.utils.data.DataLoader(valid_dataset, batch_size=1, **dataloader_kwargs)
 
-    
-    ##########################################
-    # |         ________
-    # |        |        |
-    # |        |        |
-    # |        |        |     A       D
-    # |        |        |
-    # _______  __________ 
-    #   M       O       D       E       L
-    ##########################################
-    model = None
+    model = MusicSeparator()
+    model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -94,6 +92,37 @@ def main():
     )
 
     es = utils.EarlyStopping(patience=args.patience)
+
+    if args.model_path:
+        model_path = Path(args.model_path).expanduser()
+        with open(Path(model_path, args.target + ".json"), "r") as stream:
+            results = json.load(stream)
+        
+        target_model_path = Path(model_path, "model.chkpnt")
+        checkpoint = torch.load(target_model_path, map_location=device)
+        model.load_state_dict(checkpoint["state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler.load_state_dict(checkpoint["scheduler"])
+
+        t = tqdm.trange(
+            results["epochs_trained"],
+            results["epochs_trained"] + args.epochs + 1,
+            disable=args.quiet,
+        )
+        train_losses = results["train_loss_history"]
+        valid_losses = results["valid_loss_history"]
+        train_times = results["train_time_history"]
+        best_epoch = results["best_epoch"]
+        es.best = results["best_loss"]
+        es.num_bad_epochs = results["num_bad_epochs"]
+    else:
+        t = tqdm.trange(1, args.epochs + 1, disable=args.quiet)
+        train_losses = []
+        valid_losses = []
+        train_times = []
+        best_epoch = 0
+
+    
 
 if __name__ == "__main__":
     main()

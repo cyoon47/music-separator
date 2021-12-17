@@ -40,3 +40,15 @@ class MusicSeparator(nn.Module):
         pred_logits = self.classifier(estimates)
 
         return pred_logits
+
+    def train(self, mode=True):
+        r"""Sets the module in training mode."""      
+        self.training = mode
+        for module in self.children():
+            module.train(mode)
+        self.separator.freeze()
+        return self
+
+    def eval(self):
+        r"""Sets the module in evaluation mode."""
+        return self.train(False)
