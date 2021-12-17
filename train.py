@@ -167,21 +167,13 @@ def main():
 
         stop = es.stop(valid_loss)
 
-        if valid_loss = es.best:
+        if valid_loss == es.best:
             best_epoch = epoch
 
-        utils.save_checkpoint({
-                'epoch': epoch+1,
-                'state_dict': model.state_dict()
-                'best_loss': es.best,
-                'optimizer': optimizer.state_dict()
-                'scheduler': scheduler.state_dict()
-            },
-            is_best=valid_loss == es.best,
-            path=target_model_path,
-            target=args.target
 
-        )
+        # torch.save(state, Path(model_path, "model.chkpnt"))
+        if is_best:
+            torch.save(state["state_dict"], os.path.join(path, target + ".pth"))
 
         #save params
         params = {
