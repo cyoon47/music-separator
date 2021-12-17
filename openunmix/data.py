@@ -926,7 +926,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--audio-backend",
         type=str,
-        default="soundfile",
+        default="sox_io",
         help="Set torchaudio backend (`sox_io` or `soundfile`",
     )
 

@@ -29,8 +29,8 @@ class MusicSeparator(nn.Module):
         self.separator.freeze()
         
         # TODO: figure out what is the input tensor size
-        in_features = 1323648 # PRAY HARD
-        self.classifier = nn.Linear(in_features, 50)
+        self.in_features = 4*2*1323648 # PRAY HARD
+        self.classifier = nn.Linear(self.in_features, 50)
 
     
     def forward(self, audio: Tensor) -> Tensor:
@@ -38,6 +38,7 @@ class MusicSeparator(nn.Module):
         #   shape (nb_samples, nb_targets, nb_channels, nb_timesteps)
         
         estimates = self.separator(audio)
+        estimates = estimates.view((-1, self.in_features))
         pred_logits = self.classifier(estimates)
 
         return pred_logits
