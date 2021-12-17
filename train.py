@@ -89,6 +89,7 @@ def main():
     valid_sampler = torch.utils.data.DataLoader(valid_dataset, batch_size=1, **dataloader_kwargs)
 
     model = MusicSeparator()
+    model = torch.nn.DataParallel(model)
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -126,6 +127,7 @@ def main():
         es.best = results["best_loss"]
         es.num_bad_epochs = results["num_bad_epochs"]
     else:
+        model_path = Path('./model/').expanduser()
         t = tqdm.trange(1, args.epochs + 1, disable=args.quiet)
         train_losses = []
         valid_losses = []
@@ -148,7 +150,7 @@ def main():
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             y_out = model(x)
-            print(y_out.shape, y.shape) 
+            # print(y_out.shape, y.shape) 
             loss = criterion(y_out, y)
             
             loss.backward()
@@ -175,7 +177,7 @@ def main():
 
         t.set_postfix(train_loss=train_loss, val_loss=valid_loss)
 
-        stop = es.stop(valid_loss)
+        stop = es.step(valid_loss)
 
         if valid_loss == es.best:
             best_epoch = epoch
@@ -188,7 +190,7 @@ def main():
             "optimizer": optimizer.state_dict(),
             "scheduler": scheduler.state_dict(),
         }
-        torch.save(state, Path(model_path, "model.chkpnt"))
+        torch.save(state, os.path.join(model_path, "model.chkpnt"))
         if valid_loss == es.best:
             torch.save(state["state_dict"], os.path.join(model_path, "model.pth"))
 
@@ -204,7 +206,7 @@ def main():
             'num_bad_epochs': es.num_bad_epochs,
         }
 
-        with open(Path(target_model_path, args.target + '.json'), 'w') as outfile:
+        with open(Path(model_path, 'model.json'), 'w') as outfile:
             outfile.write(json.dumps(params, indent=4, sort_keys=True))
         train_times.append(time.time() - end)
 

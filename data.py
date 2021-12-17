@@ -12,6 +12,10 @@ def load_datasets(train_path, valid_path):
     train_dataset = MixAudioDataset(train_path)
     valid_dataset = MixAudioDataset(valid_path)
     return train_dataset, valid_dataset
+
+def load_test_dataset(test_path):
+    test_dataset = MixAudioDataset(test_path)
+    return test_dataset
     
 class MixAudioDataset(torch.utils.data.Dataset):
     def __init__(
