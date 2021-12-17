@@ -130,7 +130,7 @@ def main():
         losses = utils.AverageMeter()
         model.train()
         pbar = tqdm.tqdm(train_sampler, disable=args.quiet)
-        criterion = nn.CrossEntropyLoss()
+        criterion = torch.nn.CrossEntropyLoss()
 
         ##Train##
         for x, y in pbar:
