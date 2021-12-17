@@ -58,6 +58,13 @@ def main():
         default=False,
         help="less verbose during training",
     )
+    parser.add_argument(
+        "--no_cuda",
+        action="store_true",
+        default=False,
+        help="use cuda",
+    )
+
 
 
     args, _ = parser.parse_known_args()
