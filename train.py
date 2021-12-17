@@ -109,6 +109,7 @@ def main():
             results["epochs_trained"] + args.epochs + 1,
             disable=args.quiet,
         )
+
         train_losses = results["train_loss_history"]
         valid_losses = results["valid_loss_history"]
         train_times = results["train_time_history"]
@@ -122,7 +123,85 @@ def main():
         train_times = []
         best_epoch = 0
 
-    
+    for epoch in t:
+        t.set_description("Training Epoch")
+        end = time.time()
+
+        losses = utils.AverageMeter()
+        model.train()
+        pbar = tqdm.tqdm(train_sampler, disable=args.quiet)
+        criterion = nn.CrossEntropyLoss()
+
+        ##Train##
+        for x, y in pbar:
+            pbar.set_description("Training batch")
+            x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()
+            y_out = model(x)
+            
+            loss = criterion(y_out, y)
+            
+            loss.backward()
+            optimizer.step()
+            losses.update(loss.item(), y.size(1))
+        
+        train_loss = losses.avg
+        
+        ##VALID##
+        losses = utils.AverageMeter()
+        model.eval()
+        with torch.no_grad():
+            for x, y in valid_sampler:
+                x, y = x.to(device), y.to(device)
+                y_out = model(x)
+                loss = criterion(y_out, y)
+                losses.update(loss.item(), y.size(1))
+        
+        valid_loss = losses.avg
+
+        scheduler.step(valid_loss)
+        train_losses.append(train_loss)
+        valid_losses.append(valid_loss)
+
+        t.set_postfix(train_loss=train_loss, val_loss=valid_loss)
+
+        stop = es.stop(valid_loss)
+
+        if valid_loss = es.best:
+            best_epoch = epoch
+
+        utils.save_checkpoint({
+                'epoch': epoch+1,
+                'state_dict': model.state_dict()
+                'best_loss': es.best,
+                'optimizer': optimizer.state_dict()
+                'scheduler': scheduler.state_dict()
+            },
+            is_best=valid_loss == es.best,
+            path=target_model_path,
+            target=args.target
+
+        )
+
+        #save params
+        params = {
+            'epochs_trained': epoch,
+            'args': vars(args),
+            'best_loss': es.best,
+            'best_epoch': best_epoch,
+            'train_loss_history': train_losses,
+            'valid_loss_history': valid_losses,
+            'train_time_history': train_times,
+            'num_bad_epochs': es.num_bad_epochs,
+        }
+
+        with open(Path(target_model_path, args.target + '.json'), 'w') as outfile:
+            outfile.write(json.dumps(params, indent=4, sort_keys=True))
+        train_times.append(time.time() - end)
+
+        if stop:
+            print("Early Stopping")
+            break
 
 if __name__ == "__main__":
     main()
